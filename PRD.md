@@ -20,11 +20,11 @@ This is a sophisticated terminal emulator with real-time AI agent interaction, s
 - **Success criteria**: Sub-100ms input responsiveness, smooth streaming without jank, proper markdown rendering
 
 ### System Resource Monitor
-- **Functionality**: Real-time display of CPU usage, memory consumption, and inference performance metrics
-- **Purpose**: Provides visibility into the computational cost of operations, reinforcing the "systems programming" aesthetic
-- **Trigger**: Continuous monitoring, updates every 500ms
-- **Progression**: Component mounts → Initial metrics loaded → Continuous polling → Visual indicators update in real-time
-- **Success criteria**: Accurate metric display, no performance impact from monitoring itself, smooth animations
+- **Functionality**: Real-time display of CPU, GPU, memory consumption, tokens/sec, latency, and FPS metrics with live graphs
+- **Purpose**: Provides visibility into the computational cost of operations, reinforcing the "systems programming" aesthetic with comprehensive monitoring
+- **Trigger**: Continuous monitoring with animation frame updates (100ms intervals)
+- **Progression**: Component mounts → Initial metrics loaded → Continuous real-time updates → Visual indicators update smoothly with color-coded thresholds
+- **Success criteria**: Accurate metric display across 6 key indicators (CPU, Memory, GPU, Tokens, Latency, FPS), no performance impact from monitoring itself, smooth 60fps animations
 
 ### Conversation History & Persistence
 - **Functionality**: Save all command/response pairs with timestamps, searchable and resumable
@@ -33,12 +33,12 @@ This is a sophisticated terminal emulator with real-time AI agent interaction, s
 - **Progression**: User interaction completes → Saved to KV store → History list updates → Accessible via sidebar navigation
 - **Success criteria**: Zero data loss, fast retrieval (<50ms), efficient storage
 
-### Multi-Agent Session Management
-- **Functionality**: Switch between different agent contexts/personalities with isolated conversation histories
-- **Purpose**: Support different workflows (coding assistant, system admin, researcher) with appropriate context
-- **Trigger**: User creates new session or switches between existing sessions
-- **Progression**: Session creation triggered → New context initialized → UI updates to reflect active session → Previous session state persisted
-- **Success criteria**: Instant switching, no cross-contamination of context, clear visual indication of active session
+### Multi-View Dashboard
+- **Functionality**: Tab-based interface with Terminal view (conversation) and Performance view (detailed metrics and system stats)
+- **Purpose**: Separate concerns between active AI interaction and deep system monitoring/debugging
+- **Trigger**: User clicks tab to switch between Terminal and Performance views
+- **Progression**: Tab click → Smooth transition → View content loads → Previous view state preserved
+- **Success criteria**: Instant view switching (<50ms), preserved scroll position and state, clear visual indication of active tab
 
 ### Code Execution & Output Display
 - **Functionality**: Display code blocks with syntax highlighting and optional execution simulation

@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Toaster, toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { MetricsDisplay } from '@/components/MetricsDisplay'
+import { AdvancedMetrics } from '@/components/AdvancedMetrics'
 import { MessageCard } from '@/components/MessageCard'
 import { CommandInput } from '@/components/CommandInput'
 import { SessionSidebar } from '@/components/SessionSidebar'
 import { Button } from '@/components/ui/button'
-import { Robot } from '@phosphor-icons/react'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Robot, ChartLine, Lightning } from '@phosphor-icons/react'
 import type { Message, Session } from '@/lib/types'
 
 function App() {
@@ -153,39 +154,121 @@ User Query: ${command}`
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <MetricsDisplay />
+          <Tabs defaultValue="terminal" className="flex-1 flex flex-col overflow-hidden">
+            <div className="border-b border-border bg-card/30 px-4">
+              <TabsList className="bg-transparent h-12">
+                <TabsTrigger value="terminal" className="gap-2">
+                  <Robot size={16} />
+                  <span className="font-sans">Terminal</span>
+                </TabsTrigger>
+                <TabsTrigger value="performance" className="gap-2">
+                  <ChartLine size={16} />
+                  <span className="font-sans">Performance</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-          <ScrollArea className="flex-1 p-6">
-            <div ref={scrollRef} className="max-w-4xl mx-auto space-y-4">
-              {!hasMessages && (
-                <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
-                  <Robot size={64} className="text-primary mb-4" weight="duotone" />
-                  <h2 className="text-2xl font-bold mb-2">Welcome to StarTerm</h2>
-                  <p className="text-muted-foreground mb-6 max-w-md font-sans">
-                    A high-performance AI agent terminal inspired by systems programming
-                    and hardware-accelerated computing.
+            <TabsContent value="terminal" className="flex-1 flex flex-col overflow-hidden m-0">
+              <AdvancedMetrics compact />
+
+              <ScrollArea className="flex-1 p-6">
+                <div ref={scrollRef} className="max-w-4xl mx-auto space-y-4">
+                  {!hasMessages && (
+                    <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
+                      <Robot size={64} className="text-primary mb-4" weight="duotone" />
+                      <h2 className="text-2xl font-bold mb-2">Welcome to StarTerm</h2>
+                      <p className="text-muted-foreground mb-6 max-w-md font-sans">
+                        A high-performance AI agent terminal inspired by systems programming
+                        and hardware-accelerated computing.
+                      </p>
+                      <div className="grid gap-2 text-left max-w-md">
+                        <p className="text-sm text-muted-foreground font-sans">
+                          <span className="text-primary font-mono">→</span> Ask technical questions
+                        </p>
+                        <p className="text-sm text-muted-foreground font-sans">
+                          <span className="text-primary font-mono">→</span> Get code examples
+                        </p>
+                        <p className="text-sm text-muted-foreground font-sans">
+                          <span className="text-primary font-mono">→</span> Discuss architecture and systems
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {messages.map((message) => (
+                    <MessageCard key={message.id} message={message} />
+                  ))}
+                </div>
+              </ScrollArea>
+
+              <CommandInput onSubmit={handleCommand} disabled={isProcessing} />
+            </TabsContent>
+
+            <TabsContent value="performance" className="flex-1 overflow-auto p-6 m-0">
+              <div className="max-w-6xl mx-auto space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">System Performance</h2>
+                  <p className="text-muted-foreground font-sans mb-6">
+                    Real-time monitoring of system resources, inference metrics, and computational performance.
                   </p>
-                  <div className="grid gap-2 text-left max-w-md">
-                    <p className="text-sm text-muted-foreground font-sans">
-                      <span className="text-primary font-mono">→</span> Ask technical questions
-                    </p>
-                    <p className="text-sm text-muted-foreground font-sans">
-                      <span className="text-primary font-mono">→</span> Get code examples
-                    </p>
-                    <p className="text-sm text-muted-foreground font-sans">
-                      <span className="text-primary font-mono">→</span> Discuss architecture and systems
-                    </p>
+                </div>
+
+                <AdvancedMetrics />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-6 border border-border rounded-lg bg-card/50">
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                      <ChartLine className="text-primary" />
+                      Inference Stats
+                    </h3>
+                    <div className="space-y-3 font-sans text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Model</span>
+                        <span className="font-mono font-semibold">gpt-4o-mini</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Context Window</span>
+                        <span className="font-mono font-semibold">128K tokens</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Quantization</span>
+                        <span className="font-mono font-semibold">INT8</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Backend</span>
+                        <span className="font-mono font-semibold">OpenAI API</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 border border-border rounded-lg bg-card/50">
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                      <Lightning className="text-accent" />
+                      Runtime Config
+                    </h3>
+                    <div className="space-y-3 font-sans text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Concurrent Threads</span>
+                        <span className="font-mono font-semibold">8</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Memory Pool</span>
+                        <span className="font-mono font-semibold">4GB</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">SIMD Instructions</span>
+                        <span className="font-mono font-semibold">AVX2</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">GPU Acceleration</span>
+                        <span className="font-mono font-semibold">CUDA 12.1</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              )}
-
-              {messages.map((message) => (
-                <MessageCard key={message.id} message={message} />
-              ))}
-            </div>
-          </ScrollArea>
-
-          <CommandInput onSubmit={handleCommand} disabled={isProcessing} />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
