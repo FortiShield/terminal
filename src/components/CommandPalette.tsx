@@ -21,6 +21,9 @@ import {
   MagnifyingGlass,
   Keyboard,
   FolderOpen,
+  Archive,
+  Terminal,
+  Gear,
 } from '@phosphor-icons/react'
 import type { Session } from '@/lib/types'
 
@@ -51,11 +54,14 @@ export function CommandPalette({
         e.preventDefault()
         setOpen((open) => !open)
       }
+      if (e.key === 'Escape' && open) {
+        setOpen(false)
+      }
     }
 
     document.addEventListener('keydown', down)
     return () => document.removeEventListener('keydown', down)
-  }, [])
+  }, [open])
 
   const handleCommand = (callback: () => void) => {
     setOpen(false)
@@ -72,41 +78,78 @@ export function CommandPalette({
 
   const handleExportSession = async () => {
     if (activeSessionId) {
-      const messages = await window.spark.kv.get(`starterm-messages-${activeSessionId}`)
-      const session = sessions.find((s) => s.id === activeSessionId)
-      
-      const exportData = {
-        session,
-        messages,
-        exportedAt: new Date().toISOString(),
+      try {
+        const messages = await window.spark.kv.get(`starterm-messages-${activeSessionId}`)
+        const session = sessions.find((s) => s.id === activeSessionId)
+
+        const exportData = {
+          session,
+          messages,
+          exportedAt: new Date().toISOString(),
+          version: '1.0',
+        }
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+          type: 'application/json',
+        })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `starterm-session-${activeSessionId}.json`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        toast.success('Session exported successfully')
+      } catch (error) {
+        toast.error('Failed to export session')
+      }
+      setOpen(false)
+    }
+  }
+
+  const handleExportAllSessions = async () => {
+    try {
+      const allData: Record<string, unknown> = { sessions, exportedAt: new Date().toISOString() }
+
+      for (const session of sessions) {
+        const messages = await window.spark.kv.get(`starterm-messages-${session.id}`)
+        allData[`messages-${session.id}`] = messages
       }
 
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      const blob = new Blob([JSON.stringify(allData, null, 2)], {
         type: 'application/json',
       })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `starterm-session-${activeSessionId}.json`
+      a.download = `starterm-export-${Date.now()}.json`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      toast.success('Session exported successfully')
-      setOpen(false)
+      toast.success('All sessions exported')
+    } catch (error) {
+      toast.error('Failed to export sessions')
     }
+    setOpen(false)
   }
 
   const handleClearAllSessions = async () => {
-    const allKeys = await window.spark.kv.keys()
-    const sessionKeys = allKeys.filter((key) => key.startsWith('starterm-messages-'))
-    
-    for (const key of sessionKeys) {
-      await window.spark.kv.delete(key)
+    try {
+      const allKeys = await window.spark.kv.keys()
+      const sessionKeys = allKeys.filter((key: string) => key.startsWith('starterm-'))
+
+      for (const key of sessionKeys) {
+        await window.spark.kv.delete(key)
+      }
+
+      toast.success('All data cleared')
+      window.location.reload()
+    } catch (error) {
+      toast.error('Failed to clear data')
     }
-    
     setOpen(false)
-    window.location.reload()
   }
 
   return (
@@ -114,7 +157,7 @@ export function CommandPalette({
       <CommandInput placeholder="Type a command or search..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
-        
+
         <CommandGroup heading="Navigation">
           <CommandItem onSelect={() => handleCommand(onNavigateToTerminal)}>
             <Robot className="mr-2" />
@@ -142,7 +185,11 @@ export function CommandPalette({
           </CommandItem>
           <CommandItem onSelect={handleExportSession}>
             <Download className="mr-2" />
-            <span>Export Session</span>
+            <span>Export Current Session</span>
+          </CommandItem>
+          <CommandItem onSelect={handleExportAllSessions}>
+            <Archive className="mr-2" />
+            <span>Export All Sessions</span>
           </CommandItem>
           {sessions.length > 1 && (
             <CommandItem
@@ -181,13 +228,23 @@ export function CommandPalette({
 
         <CommandSeparator />
 
+        <CommandGroup heading="Help">
+          <CommandItem onSelect={() => setOpen(false)}>
+            <Keyboard className="mr-2" />
+            <span>Keyboard Shortcuts</span>
+            <span className="ml-auto text-xs text-muted-foreground font-mono">Esc</span>
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator />
+
         <CommandGroup heading="System">
           <CommandItem onSelect={handleClearAllSessions}>
             <ArrowsClockwise className="mr-2" />
             <span>Clear All Data & Restart</span>
           </CommandItem>
           <CommandItem onSelect={() => setOpen(false)}>
-            <Keyboard className="mr-2" />
+            <Gear className="mr-2" />
             <span>Close Command Palette</span>
             <span className="ml-auto text-xs text-muted-foreground font-mono">Esc</span>
           </CommandItem>
