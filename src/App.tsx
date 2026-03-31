@@ -6,6 +6,7 @@ import { AdvancedMetrics } from '@/components/AdvancedMetrics'
 import { MessageCard } from '@/components/MessageCard'
 import { CommandInput } from '@/components/CommandInput'
 import { SessionSidebar } from '@/components/SessionSidebar'
+import { CommandPalette } from '@/components/CommandPalette'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Robot, ChartLine, Lightning } from '@phosphor-icons/react'
@@ -14,6 +15,7 @@ import type { Message, Session } from '@/lib/types'
 function App() {
   const [sessions, setSessions] = useKV<Session[]>('starterm-sessions', [])
   const [activeSessionId, setActiveSessionId] = useState<string>('')
+  const [activeTab, setActiveTab] = useState<string>('terminal')
   const [messages, setMessages] = useState<Message[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -37,6 +39,26 @@ function App() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === '1') {
+        e.preventDefault()
+        setActiveTab('terminal')
+      }
+      if (e.altKey && e.key === '2') {
+        e.preventDefault()
+        setActiveTab('performance')
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault()
+        createNewSession()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const createNewSession = () => {
     const currentSessions = sessions ?? []
@@ -143,6 +165,15 @@ User Query: ${command}`
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background text-foreground">
       <Toaster position="top-right" />
+      <CommandPalette
+        sessions={sessions ?? []}
+        activeSessionId={activeSessionId}
+        onSessionSelect={setActiveSessionId}
+        onNewSession={createNewSession}
+        onDeleteSession={deleteSession}
+        onNavigateToTerminal={() => setActiveTab('terminal')}
+        onNavigateToPerformance={() => setActiveTab('performance')}
+      />
       
       <div className="flex flex-1 overflow-hidden">
         <SessionSidebar
@@ -154,8 +185,8 @@ User Query: ${command}`
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Tabs defaultValue="terminal" className="flex-1 flex flex-col overflow-hidden">
-            <div className="border-b border-border bg-card/30 px-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            <div className="border-b border-border bg-card/30 px-4 flex items-center justify-between">
               <TabsList className="bg-transparent h-12">
                 <TabsTrigger value="terminal" className="gap-2">
                   <Robot size={16} />
@@ -166,6 +197,11 @@ User Query: ${command}`
                   <span className="font-sans">Performance</span>
                 </TabsTrigger>
               </TabsList>
+              
+              <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
+                <kbd className="px-2 py-1 bg-muted rounded border border-border">⌘K</kbd>
+                <span>Command Palette</span>
+              </div>
             </div>
 
             <TabsContent value="terminal" className="flex-1 flex flex-col overflow-hidden m-0">
